@@ -1,5 +1,8 @@
 # App Agent & Assistant Template (Bolt for Python)
 
+> [!NOTE]
+> This template uses Google's Gemini model via their OpenAI-compatible API.
+
 This Bolt for Python template demonstrates how to build [Agents & Assistants](https://api.slack.com/docs/apps/ai) in Slack.
 
 ## Setup
@@ -10,35 +13,64 @@ Join the [Slack Developer Program](https://api.slack.com/developer-program) for 
 
 ## Installation
 
-#### Create a Slack App
+### Create a Slack App
 1. Open [https://api.slack.com/apps/new](https://api.slack.com/apps/new) and choose "From an app manifest"
 2. Choose the workspace you want to install the application to
 3. Copy the contents of [manifest.json](./manifest.json) into the text box that says `*Paste your manifest code here*` (within the JSON tab) and click *Next*
 4. Review the configuration and click *Create*
 5. Click *Install to Workspace* and *Allow* on the screen that follows. You'll then be redirected to the App Configuration dashboard.
 
-#### Environment Variables
+### Environment Variables
 Before you can run the app, you'll need to store some environment variables.
 
 1. Open your app configuration page from this list, click **OAuth & Permissions** in the left hand menu, then copy the Bot User OAuth Token. You will store this in your environment as `SLACK_BOT_TOKEN`.
 2. Click **Basic Information** from the left hand menu and follow the steps in the App-Level Tokens section to create an app-level token with the `connections:write` scope. Copy this token. You will store this in your environment as `SLACK_APP_TOKEN`.
+
+#### Using a .env file (Recommended)
+
+This project uses `python-dotenv` to automatically load environment variables from a `.env` file when you run the app. A `.env-example` file is included at the project root with all required variables.
+
+**Setup:**
+
+```zsh
+# Copy the example to a working .env file
+cp .env-example .env
+
+# Edit .env and replace the placeholder values with your real tokens
+
+# Then run the app — python-dotenv will load the variables automatically:
+python3 app.py
+```
+
+> [!NOTE]
+> The `.env` file is ignored by git (via `.gitignore`) to keep your secrets safe.
+
+#### Alternative: Export variables directly
+
+If you prefer not to use a `.env` file, you can export variables directly in your shell (macOS / Linux / zsh or bash):
 
 ```zsh
 # Replace with your app token and bot token
 # For Windows OS, env:SLACK_BOT_TOKEN = <your-bot-token> works
 export SLACK_BOT_TOKEN=<your-bot-token>
 export SLACK_APP_TOKEN=<your-app-token>
+
 # This sample uses OpenAI's API by default, but you can switch to any other solution!
-export OPENAI_API_KEY=<your-openai-api-key>
+export GEMINI_API_KEY=<your-gemini-api-key>
+export GEMINI_API_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai/
+export GEMINI_MODEL=<your-prefered-gemini-model> # e.g. gemini-2.5-flash
 ```
+> [!TIP]
+> To get your Gemini API key, go to the [Google AI Studio](https://aistudio.google.com/app/api-keys) and create a new API key.
+> If you want to learn more about Gemini's OpenAI-compatible API, check out the [official documentation](https://ai.google.dev/gemini-api/docs/openai/).
 
 ### Setup Your Local Project
 ```zsh
 # Clone this project onto your machine
-git clone https://github.com/slack-samples/bolt-python-assistant-template.git
+git clone https://github.com/jonigl/slack-ai-agent-with-google-gemini.git
 
 # Change into this project directory
-cd bolt-python-assistant-template
+cd slack-ai-agent-with-google-gemini
 
 # Setup your python virtual environment
 python3 -m venv .venv
@@ -80,7 +112,7 @@ Only implement OAuth if you plan to distribute your application across multiple 
 
 When using OAuth, Slack requires a public URL where it can send requests. In this template app, we've used [`ngrok`](https://ngrok.com/download). Checkout [this guide](https://ngrok.com/docs#getting-started-expose) for setting it up.
 
-Start `ngrok` to access the app on an external network and create a redirect URL for OAuth. 
+Start `ngrok` to access the app on an external network and create a redirect URL for OAuth.
 
 ```
 ngrok http 3000

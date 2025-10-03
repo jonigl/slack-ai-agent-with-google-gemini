@@ -2,7 +2,7 @@ import os
 import re
 from typing import List, Dict
 
-import openai
+from openai import OpenAI
 
 DEFAULT_SYSTEM_CONTENT = """
 You're an assistant in a Slack workspace.
@@ -17,11 +17,11 @@ def call_llm(
     messages_in_thread: List[Dict[str, str]],
     system_content: str = DEFAULT_SYSTEM_CONTENT,
 ) -> str:
-    openai_client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    openai_client = OpenAI(api_key=os.environ.get("GEMINI_API_KEY"), base_url=os.environ.get("GEMINI_API_BASE_URL"))
     messages = [{"role": "system", "content": system_content}]
     messages.extend(messages_in_thread)
     response = openai_client.chat.completions.create(
-        model="gpt-4o-mini",
+        model=os.environ.get("GEMINI_MODEL", "gemini-2.5-flash"),
         n=1,
         messages=messages,
         max_tokens=16384,
