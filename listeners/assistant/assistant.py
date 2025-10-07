@@ -3,21 +3,24 @@ from random import random
 from typing import List, Dict
 from slack_bolt import Assistant, BoltContext, Say, SetSuggestedPrompts, SetStatus
 from slack_bolt.context.get_thread_context import GetThreadContext
+from slack_sdk.models.blocks import Block, ContextActionsBlock, FeedbackButtonsElement, FeedbackButtonObject
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 
-from .llm_caller import call_llm
+from ai.llm_caller import call_llm
+
+from ..views.feedback_block import create_feedback_block
 
 # Refer to https://tools.slack.dev/bolt-python/concepts/assistant/ for more details
 assistant = Assistant()
 
 # funny thinking messages
 thinking_messages = [
-    "Hmm... Let me think about it :thinking_face:",
-   "Just a moment while I process this...",
-   "I'm on it! Give me a second...",
-   "Let me gather my thoughts...",
-   "Thinking... Please hold on.",
+    "Hmm... Let me think about it.",
+    "Just a moment while I process this...",
+    "I'm on it! Give me a second...",
+    "Let me gather my thoughts...",
+    "Thinking... Please hold on.",
 ]
 
 # This listener is invoked when a human user opened an assistant thread
@@ -70,11 +73,13 @@ def respond_in_assistant_thread(
     get_thread_context: GetThreadContext,
     client: WebClient,
     say: Say,
+
 ):
     try:
         channel_id = payload["channel"]
         thread_ts = payload["thread_ts"]
         user_id = payload["user"]
+        team_id = context.team_id
         user_message = payload["text"]
         # set a random thinking message every time we start processing a user message
         set_status(thinking_messages[int(random() * len(thinking_messages))])
@@ -101,7 +106,22 @@ def respond_in_assistant_thread(
                     prompt += f"\n<@{message['user']}> says: {message['text']}\n"
             messages_in_thread = [{"role": "user", "content": prompt}]
             returned_message = call_llm(messages_in_thread)
-            say(returned_message)
+            # Initialize a message streamer to stream the response
+            streamer = client.chat_stream(
+                channel=channel_id,
+                recipient_team_id=team_id,
+                recipient_user_id=user_id,
+                thread_ts=thread_ts,
+            )
+
+            # Loop over OpenAI response stream
+            for chunk in returned_message:
+                if chunk.choices[0].delta.content is not None:
+                    streamer.append(markdown_text=chunk.choices[0].delta.content)
+
+            feedback_block = create_feedback_block()
+            streamer.stop(blocks=feedback_block)
+            # say(returned_message)
             return
 
         replies = client.conversations_replies(
@@ -114,12 +134,28 @@ def respond_in_assistant_thread(
         for message in replies["messages"]:
             role = "user" if message.get("bot_id") is None else "assistant"
             messages_in_thread.append({"role": role, "content": message["text"]})
+
         returned_message = call_llm(messages_in_thread)
-        say(returned_message)
+        # Initialize a message streamer to stream the response
+        streamer = client.chat_stream(
+            channel=channel_id,
+            recipient_team_id=team_id,
+            recipient_user_id=user_id,
+            thread_ts=thread_ts,
+        )
+
+        # Loop over OpenAI response stream
+        for chunk in returned_message:
+            if chunk.choices[0].delta.content is not None:
+                streamer.append(markdown_text=chunk.choices[0].delta.content)
+
+        feedback_block = create_feedback_block()
+        streamer.stop(blocks=feedback_block)
 
     except Exception as e:
         logger.exception(f"Failed to handle a user message event: {e}")
         say(f":warning: Something went wrong! ({e})")
+
 
 @assistant.thread_context_changed
 def handle_thread_context_change(

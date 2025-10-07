@@ -3,6 +3,8 @@ import re
 from typing import List, Dict
 
 from openai import OpenAI
+from openai import Stream
+from openai.types.responses import ResponseStreamEvent
 
 DEFAULT_SYSTEM_CONTENT = """
 You're an assistant in a Slack workspace.
@@ -16,7 +18,7 @@ When a prompt has Slack's special syntax like <@USER_ID> or <#CHANNEL_ID>, you m
 def call_llm(
     messages_in_thread: List[Dict[str, str]],
     system_content: str = DEFAULT_SYSTEM_CONTENT,
-) -> str:
+) -> Stream[ResponseStreamEvent]:
     openai_client = OpenAI(api_key=os.environ.get("GEMINI_API_KEY"), base_url=os.environ.get("GEMINI_API_BASE_URL"))
     messages = [{"role": "system", "content": system_content}]
     messages.extend(messages_in_thread)
@@ -25,8 +27,9 @@ def call_llm(
         n=1,
         messages=messages,
         max_tokens=16384,
+        stream=True
     )
-    return markdown_to_slack(response.choices[0].message.content)
+    return response # markdown_to_slack(response.choices[0].message.content)
 
 
 # Conversion from OpenAI markdown to Slack mrkdwn
