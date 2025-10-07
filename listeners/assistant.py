@@ -117,3 +117,23 @@ def respond_in_assistant_thread(
     except Exception as e:
         logger.exception(f"Failed to handle a user message event: {e}")
         say(f":warning: Something went wrong! ({e})")
+
+@assistant.thread_context_changed
+def handle_thread_context_change(
+    payload: dict,
+    logger: logging.Logger,
+    context: BoltContext,
+    set_status: SetStatus,
+    get_thread_context: GetThreadContext,
+    client: WebClient,
+    say: Say,
+):
+    try:
+        thread_context = get_thread_context()
+        if thread_context is not None:
+            # If the thread context has changed, we may need to update our state
+            channel_id = thread_context.get("channel_id")
+            say(f"The context of this thread has changed to a new channel <#{channel_id}>. How can I assist you?")
+    except Exception as e:
+        logger.exception(f"Failed to handle a thread context change event: {e}")
+        say(f":warning: Something went wrong! ({e})")
