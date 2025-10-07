@@ -1,4 +1,5 @@
 import logging
+from random import random
 from typing import List, Dict
 from slack_bolt import Assistant, BoltContext, Say, SetSuggestedPrompts, SetStatus
 from slack_bolt.context.get_thread_context import GetThreadContext
@@ -10,6 +11,14 @@ from .llm_caller import call_llm
 # Refer to https://tools.slack.dev/bolt-python/concepts/assistant/ for more details
 assistant = Assistant()
 
+# funny thinking messages
+thinking_messages = [
+    "Hmm... Let me think about it :thinking_face:",
+   "Just a moment while I process this...",
+   "I'm on it! Give me a second...",
+   "Let me gather my thoughts...",
+   "Thinking... Please hold on.",
+]
 
 # This listener is invoked when a human user opened an assistant thread
 @assistant.thread_started
@@ -64,7 +73,8 @@ def respond_in_assistant_thread(
 ):
     try:
         user_message = payload["text"]
-        set_status("is typing...")
+        # set a random thinking message every time we start processing a user message
+        set_status(thinking_messages[int(random() * len(thinking_messages))])
 
         if user_message == "Can you generate a brief summary of the referred channel?":
             # the logic here requires the additional bot scopes:
