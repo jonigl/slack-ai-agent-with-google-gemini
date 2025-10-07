@@ -72,6 +72,9 @@ def respond_in_assistant_thread(
     say: Say,
 ):
     try:
+        channel_id = payload["channel"]
+        thread_ts = payload["thread_ts"]
+        user_id = payload["user"]
         user_message = payload["text"]
         # set a random thinking message every time we start processing a user message
         set_status(thinking_messages[int(random() * len(thinking_messages))])
