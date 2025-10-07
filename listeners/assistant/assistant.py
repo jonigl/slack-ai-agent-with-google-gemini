@@ -104,8 +104,11 @@ def respond_in_assistant_thread(
             for message in reversed(channel_history.get("messages")):
                 if message.get("user") is not None:
                     prompt += f"\n<@{message['user']}> says: {message['text']}\n"
+
             messages_in_thread = [{"role": "user", "content": prompt}]
+
             returned_message = call_llm(messages_in_thread)
+
             # Initialize a message streamer to stream the response
             streamer = client.chat_stream(
                 channel=channel_id,
@@ -121,7 +124,7 @@ def respond_in_assistant_thread(
 
             feedback_block = create_feedback_block()
             streamer.stop(blocks=feedback_block)
-            # say(returned_message)
+            # say(returned_message) just for reference, we now use streamer above to stream the response
             return
 
         replies = client.conversations_replies(
