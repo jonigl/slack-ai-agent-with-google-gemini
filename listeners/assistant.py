@@ -132,6 +132,8 @@ def handle_thread_context_change(
     say: Say,
 ):
     try:
+        # set a random thinking message every time we start processing a user message
+        set_status(thinking_messages[int(random() * len(thinking_messages))])
         thread_context = get_thread_context()
         if thread_context is not None:
             # If the thread context has changed, we may need to update our state
